@@ -150,8 +150,8 @@ function displayNews(newsItems) {
     // Sort by publication date
     newsItems.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
     
-    container.innerHTML = newsItems.map(item => `
-        <article class="news-item">
+    container.innerHTML = newsItems.map((item, index) => `
+        <article class="news-item" style="animation-delay: ${index * 0.05}s">
             <div class="news-content">
                 ${item.image ? `
                     <div class="news-image">

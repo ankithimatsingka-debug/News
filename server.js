@@ -142,30 +142,68 @@ async function fetchNewsFromSource(source) {
             // Extract image from various possible fields
             let imageUrl = null;
             
-            // Try different image fields
+            // Method 1: Enclosure (common in RSS 2.0)
             if (item.enclosure && item.enclosure.url) {
                 imageUrl = item.enclosure.url;
-            } else if (item['media:content'] && item['media:content']['$'] && item['media:content']['$'].url) {
-                imageUrl = item['media:content']['$'].url;
-            } else if (item['media:thumbnail'] && item['media:thumbnail']['$'] && item['media:thumbnail']['$'].url) {
-                imageUrl = item['media:thumbnail']['$'].url;
-            } else if (item.content) {
-                // Try to extract image from content HTML
-                const imgMatch = item.content.match(/<img[^>]+src="([^">]+)"/);
-                if (imgMatch) {
+            } 
+            // Method 2: Media RSS namespace - media:content
+            else if (item['media:content']) {
+                if (Array.isArray(item['media:content'])) {
+                    imageUrl = item['media:content'][0]?.$ ? item['media:content'][0].$.url : null;
+                } else if (item['media:content'].$) {
+                    imageUrl = item['media:content'].$.url;
+                } else if (item['media:content'].url) {
+                    imageUrl = item['media:content'].url;
+                }
+            }
+            // Method 3: Media RSS namespace - media:thumbnail
+            else if (item['media:thumbnail']) {
+                if (Array.isArray(item['media:thumbnail'])) {
+                    imageUrl = item['media:thumbnail'][0]?.$ ? item['media:thumbnail'][0].$.url : null;
+                } else if (item['media:thumbnail'].$) {
+                    imageUrl = item['media:thumbnail'].$.url;
+                } else if (item['media:thumbnail'].url) {
+                    imageUrl = item['media:thumbnail'].url;
+                }
+            }
+            // Method 4: iTunes image
+            else if (item.itunes && item.itunes.image) {
+                imageUrl = item.itunes.image;
+            }
+            // Method 5: Content with image tag
+            else if (item.content) {
+                const imgMatch = item.content.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (imgMatch && imgMatch[1]) {
+                    imageUrl = imgMatch[1];
+                }
+            }
+            // Method 6: Content:encoded field
+            else if (item['content:encoded']) {
+                const imgMatch = item['content:encoded'].match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (imgMatch && imgMatch[1]) {
+                    imageUrl = imgMatch[1];
+                }
+            }
+            // Method 7: Description with image
+            else if (item.description) {
+                const imgMatch = item.description.match(/<img[^>]+src=["']([^"']+)["']/i);
+                if (imgMatch && imgMatch[1]) {
                     imageUrl = imgMatch[1];
                 }
             }
             
             // Get description and truncate to 100 characters
-            let description = item.contentSnippet || item.content || item.description || '';
+            let description = item.contentSnippet || item.summary || item.description || '';
             
             // Remove HTML tags if present
             description = description.replace(/<[^>]*>/g, '');
             
+            // Remove extra whitespace
+            description = description.replace(/\s+/g, ' ').trim();
+            
             // Truncate to 100 characters
             if (description.length > 100) {
-                description = description.substring(0, 100).trim() + '...';
+                description = description.substring(0, 97).trim() + '...';
             }
             
             return {
@@ -233,6 +271,24 @@ app.get('/api/news/:category', async (req, res) => {
 // Health check
 app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
+});
+
+// Debug endpoint to check image extraction
+app.get('/api/debug/:category', async (req, res) => {
+    const category = req.params.category;
+    try {
+        const news = await aggregateNews(category);
+        const stats = {
+            total: news.length,
+            withImages: news.filter(item => item.image).length,
+            withoutImages: news.filter(item => !item.image).length,
+            sampleWithImage: news.find(item => item.image) || null,
+            sources: [...new Set(news.map(item => item.source))]
+        };
+        res.json(stats);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
 });
 
 const PORT = process.env.PORT || 3000;

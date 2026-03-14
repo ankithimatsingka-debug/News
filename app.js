@@ -278,7 +278,74 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup scroll-to-top button
     setupScrollToTop();
+    
+    // Setup automatic page refresh every hour
+    setupAutoPageRefresh();
 });
+
+// Automatic page refresh every hour
+function setupAutoPageRefresh() {
+    const ONE_HOUR = 60 * 60 * 1000; // 1 hour in milliseconds
+    const WARNING_TIME = 5 * 60 * 1000; // Show warning 5 minutes before refresh
+    
+    // Store the initial load time
+    const loadTime = Date.now();
+    sessionStorage.setItem('pageLoadTime', loadTime);
+    
+    let warningShown = false;
+    
+    // Check if we should refresh
+    const checkInterval = setInterval(() => {
+        const currentTime = Date.now();
+        const storedLoadTime = parseInt(sessionStorage.getItem('pageLoadTime') || loadTime);
+        const timeSinceLoad = currentTime - storedLoadTime;
+        const timeUntilRefresh = ONE_HOUR - timeSinceLoad;
+        
+        // Show warning 5 minutes before refresh
+        if (!warningShown && timeUntilRefresh <= WARNING_TIME && timeUntilRefresh > 0) {
+            showRefreshNotification(Math.floor(timeUntilRefresh / 60000)); // minutes remaining
+            warningShown = true;
+        }
+        
+        // If it's been an hour, refresh the page
+        if (timeSinceLoad >= ONE_HOUR) {
+            console.log('Auto-refreshing page for fresh news...');
+            // Save scroll position
+            sessionStorage.setItem('scrollPosition', window.scrollY);
+            // Reload the page (hard refresh)
+            window.location.reload(true);
+            clearInterval(checkInterval);
+        }
+    }, 60000); // Check every minute
+    
+    // Restore scroll position after refresh (if available)
+    const savedScrollPosition = sessionStorage.getItem('scrollPosition');
+    if (savedScrollPosition) {
+        setTimeout(() => {
+            window.scrollTo(0, parseInt(savedScrollPosition));
+            sessionStorage.removeItem('scrollPosition');
+        }, 100);
+    }
+}
+
+// Show refresh notification
+function showRefreshNotification(minutesRemaining) {
+    const notification = document.createElement('div');
+    notification.className = 'refresh-notification';
+    notification.innerHTML = `
+        <span>🔄 Fresh news loading in ${minutesRemaining} minute${minutesRemaining > 1 ? 's' : ''}...</span>
+        <button onclick="this.parentElement.remove()">×</button>
+    `;
+    document.body.appendChild(notification);
+    
+    // Auto-remove after 10 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.classList.add('fade-out');
+            setTimeout(() => notification.remove(), 300);
+        }
+    }, 10000);
+}
 
 // Scroll-to-top button
 function setupScrollToTop() {

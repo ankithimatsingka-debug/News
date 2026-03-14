@@ -275,7 +275,50 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup read state tracking
     setupReadStateTracking();
+    
+    // Setup scroll-to-top button
+    setupScrollToTop();
 });
+
+// Scroll-to-top button
+function setupScrollToTop() {
+    // Create button element
+    const button = document.createElement('div');
+    button.className = 'scroll-to-top';
+    button.setAttribute('aria-label', 'Scroll to top');
+    document.body.appendChild(button);
+    
+    let ticking = false;
+    
+    // Show/hide based on scroll position
+    function updateScrollButton() {
+        const scrollY = window.scrollY;
+        
+        if (scrollY > 300) {
+            button.classList.add('visible');
+        } else {
+            button.classList.remove('visible');
+        }
+        
+        ticking = false;
+    }
+    
+    // Scroll event listener
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(updateScrollButton);
+            ticking = true;
+        }
+    });
+    
+    // Click to scroll to top
+    button.addEventListener('click', () => {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    });
+}
 
 // Scroll-to-hide header
 function setupScrollHeader() {

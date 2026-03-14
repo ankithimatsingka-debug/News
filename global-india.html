@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global India - Business News Aggregator</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <h1 class="logo">📰 News Aggregator</h1>
+            <ul class="nav-links">
+                <li><a href="index.html">India Papers</a></li>
+                <li><a href="global.html">Global Papers</a></li>
+                <li><a href="global-india.html" class="active">Global India</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <main class="container">
+        <div class="page-header">
+            <h2>Global India Coverage</h2>
+            <p class="subtitle">India-related news from WSJ, FT, Bloomberg, Nikkei, Straits Times, Handelsblatt</p>
+            <div class="last-updated">
+                Last updated: <span id="lastUpdate">Loading...</span>
+                <span class="auto-refresh">⟳ Auto-refreshes every 2 hours</span>
+            </div>
+        </div>
+
+        <div id="newsContainer" class="news-container">
+            <div class="loading">Loading news...</div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>News aggregated from multiple sources • Updates every 2 hours</p>
+        </div>
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        // Initialize global India news feed
+        loadNews('global-india');
+    </script>
+</body>
+</html>

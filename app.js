@@ -269,4 +269,78 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Setup auto-refresh
     setupAutoRefresh(category);
+    
+    // Setup scroll-to-hide header
+    setupScrollHeader();
+    
+    // Setup read state tracking
+    setupReadStateTracking();
 });
+
+// Scroll-to-hide header
+function setupScrollHeader() {
+    let lastScrollY = window.scrollY;
+    let ticking = false;
+    
+    const navbar = document.querySelector('.navbar');
+    
+    function updateNavbar() {
+        const scrollY = window.scrollY;
+        
+        if (scrollY > lastScrollY && scrollY > 100) {
+            // Scrolling down
+            navbar.classList.add('hidden');
+        } else {
+            // Scrolling up
+            navbar.classList.remove('hidden');
+        }
+        
+        lastScrollY = scrollY;
+        ticking = false;
+    }
+    
+    window.addEventListener('scroll', () => {
+        if (!ticking) {
+            window.requestAnimationFrame(updateNavbar);
+            ticking = true;
+        }
+    });
+}
+
+// Track read state
+function setupReadStateTracking() {
+    // Load read articles from localStorage
+    const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+    
+    // Mark read articles
+    setTimeout(() => {
+        document.querySelectorAll('.news-item').forEach(item => {
+            const link = item.querySelector('.news-title a');
+            if (link && readArticles.includes(link.href)) {
+                item.classList.add('read');
+            }
+        });
+    }, 100);
+    
+    // Track clicks
+    document.addEventListener('click', (e) => {
+        const newsLink = e.target.closest('.news-title a');
+        if (newsLink) {
+            const newsItem = newsLink.closest('.news-item');
+            if (newsItem) {
+                newsItem.classList.add('read');
+                
+                // Save to localStorage
+                const readArticles = JSON.parse(localStorage.getItem('readArticles') || '[]');
+                if (!readArticles.includes(newsLink.href)) {
+                    readArticles.push(newsLink.href);
+                    // Keep only last 100 articles
+                    if (readArticles.length > 100) {
+                        readArticles.shift();
+                    }
+                    localStorage.setItem('readArticles', JSON.stringify(readArticles));
+                }
+            }
+        }
+    });
+}

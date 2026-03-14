@@ -4,7 +4,12 @@ const Parser = require('rss-parser');
 const NodeCache = require('node-cache');
 
 const app = express();
-const parser = new Parser();
+const parser = new Parser({
+    timeout: 10000, // 10 second timeout
+    headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+    }
+});
 const cache = new NodeCache({ stdTTL: 7200 }); // 2 hours cache
 
 app.use(cors());
@@ -32,37 +37,37 @@ const NEWS_SOURCES = {
     ],
     
     global: [
-        // US & International
-        { name: 'Reuters Business', url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best' },
-        { name: 'Bloomberg', url: 'https://www.bloomberg.com/politics/feeds/site.xml' },
-        { name: 'Financial Times', url: 'https://www.ft.com/news-feed?format=rss' },
-        { name: 'WSJ', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' },
-        { name: 'WSJ Business', url: 'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml' },
-        { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
-        { name: 'Forbes', url: 'https://www.forbes.com/business/feed/' },
-        { name: 'Business Insider', url: 'https://www.businessinsider.com/rss' },
+        // US & International - Working Feeds
+        { name: 'Reuters', url: 'https://feeds.reuters.com/reuters/businessNews' },
+        { name: 'Reuters Markets', url: 'https://feeds.reuters.com/reuters/marketsNews' },
+        { name: 'AP Business', url: 'https://feedx.net/rss/ap-business.xml' },
+        { name: 'BBC Business', url: 'https://feeds.bbci.co.uk/news/business/rss.xml' },
+        { name: 'CNN Business', url: 'http://rss.cnn.com/rss/money_latest.rss' },
+        { name: 'MarketWatch', url: 'https://www.marketwatch.com/rss/topstories' },
+        { name: 'CNBC Top News', url: 'https://search.cnbc.com/rs/search/combinedcms/view.xml?partnerId=wrss01&id=10001147' },
+        { name: 'Financial Times', url: 'https://www.ft.com/rss/home' },
+        { name: 'WSJ World', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' },
+        { name: 'NYT Business', url: 'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml' },
+        { name: 'Washington Post Business', url: 'https://feeds.washingtonpost.com/rss/business' },
         
-        // Europe
-        { name: 'Handelsblatt', url: 'https://www.handelsblatt.com/contentexport/feed/top-themen' },
-        { name: 'The Economist', url: 'https://www.economist.com/business/rss.xml' },
+        // Tech & Business
+        { name: 'TechCrunch', url: 'https://techcrunch.com/feed/' },
+        { name: 'Ars Technica', url: 'https://feeds.arstechnica.com/arstechnica/index' },
         
         // Asia-Pacific
-        { name: 'Nikkei Asia', url: 'https://asia.nikkei.com/rss/feed/nar' },
-        { name: 'Straits Times', url: 'https://www.straitstimes.com/news/business/rss.xml' },
         { name: 'South China Morning Post', url: 'https://www.scmp.com/rss/91/feed' },
-        { name: 'Japan Times Business', url: 'https://www.japantimes.co.jp/feed/business/' }
+        { name: 'Japan Times', url: 'https://www.japantimes.co.jp/feed/' },
+        { name: 'Channel NewsAsia', url: 'https://www.channelnewsasia.com/api/v1/rss-outbound-feed?_format=xml&category=6511' }
     ],
     
     'global-india': [
-        // Dedicated India coverage from global sources
-        { name: 'Reuters India', url: 'https://www.reuters.com/places/india/feed/' },
-        { name: 'Bloomberg India', url: 'https://www.bloomberg.com/feeds/podcasts/india.xml' },
-        { name: 'FT India', url: 'https://www.ft.com/world/asia-pacific/india?format=rss' },
-        { name: 'WSJ India', url: 'https://www.wsj.com/news/types/india-news?mod=rsswn' },
-        { name: 'BBC India Business', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml' },
-        { name: 'Guardian India', url: 'https://www.theguardian.com/world/india/rss' },
-        { name: 'Nikkei Asia India', url: 'https://asia.nikkei.com/Location/South-Asia/India/feed' },
-        { name: 'SCMP India', url: 'https://www.scmp.com/rss/322214/feed' }
+        // Dedicated India coverage from global sources - Working Feeds
+        { name: 'Reuters India', url: 'https://feeds.reuters.com/reuters/INbusinessNews' },
+        { name: 'BBC India', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml' },
+        { name: 'Al Jazeera India', url: 'https://www.aljazeera.com/xml/rss/all.xml' },
+        { name: 'NYT Asia Pacific', url: 'https://rss.nytimes.com/services/xml/rss/nyt/AsiaPacific.xml' },
+        { name: 'Guardian Asia', url: 'https://www.theguardian.com/world/asia/rss' },
+        { name: 'SCMP Asia', url: 'https://www.scmp.com/rss/2/feed' }
     ]
 };
 

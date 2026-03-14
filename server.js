@@ -13,17 +13,56 @@ app.use(express.static('.'));
 // News sources configuration
 const NEWS_SOURCES = {
     india: [
+        // Major Business Papers
         { name: 'Economic Times', url: 'https://economictimes.indiatimes.com/rssfeedstopstories.cms' },
         { name: 'Business Standard', url: 'https://www.business-standard.com/rss/home_page_top_stories.rss' },
         { name: 'Mint', url: 'https://www.livemint.com/rss/news' },
+        { name: 'Mint Market', url: 'https://www.livemint.com/rss/markets' },
         { name: 'Financial Express', url: 'https://www.financialexpress.com/feed/' },
-        { name: 'Business Line', url: 'https://www.thehindubusinessline.com/news/feeder/default.rss' }
+        { name: 'Business Line', url: 'https://www.thehindubusinessline.com/news/feeder/default.rss' },
+        { name: 'Business Line Economy', url: 'https://www.thehindubusinessline.com/economy/feeder/default.rss' },
+        
+        // Additional Indian Sources
+        { name: 'MoneyControl', url: 'https://www.moneycontrol.com/rss/latestnews.xml' },
+        { name: 'Business Today', url: 'https://www.businesstoday.in/latest/rss' },
+        { name: 'Forbes India', url: 'https://www.forbesindia.com/rss/news.xml' },
+        { name: 'Indian Express Business', url: 'https://indianexpress.com/section/business/feed/' },
+        { name: 'News18 Business', url: 'https://www.news18.com/rss/business.xml' },
+        { name: 'BloombergQuint', url: 'https://www.bloombergquint.com/feed' }
     ],
+    
     global: [
-        { name: 'Reuters', url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best' },
+        // US & International
+        { name: 'Reuters Business', url: 'https://www.reutersagency.com/feed/?taxonomy=best-topics&post_type=best' },
         { name: 'Bloomberg', url: 'https://www.bloomberg.com/politics/feeds/site.xml' },
         { name: 'Financial Times', url: 'https://www.ft.com/news-feed?format=rss' },
-        { name: 'WSJ', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' }
+        { name: 'WSJ', url: 'https://feeds.a.dj.com/rss/RSSWorldNews.xml' },
+        { name: 'WSJ Business', url: 'https://feeds.a.dj.com/rss/WSJcomUSBusiness.xml' },
+        { name: 'CNBC', url: 'https://www.cnbc.com/id/100003114/device/rss/rss.html' },
+        { name: 'Forbes', url: 'https://www.forbes.com/business/feed/' },
+        { name: 'Business Insider', url: 'https://www.businessinsider.com/rss' },
+        
+        // Europe
+        { name: 'Handelsblatt', url: 'https://www.handelsblatt.com/contentexport/feed/top-themen' },
+        { name: 'The Economist', url: 'https://www.economist.com/business/rss.xml' },
+        
+        // Asia-Pacific
+        { name: 'Nikkei Asia', url: 'https://asia.nikkei.com/rss/feed/nar' },
+        { name: 'Straits Times', url: 'https://www.straitstimes.com/news/business/rss.xml' },
+        { name: 'South China Morning Post', url: 'https://www.scmp.com/rss/91/feed' },
+        { name: 'Japan Times Business', url: 'https://www.japantimes.co.jp/feed/business/' }
+    ],
+    
+    'global-india': [
+        // Dedicated India coverage from global sources
+        { name: 'Reuters India', url: 'https://www.reuters.com/places/india/feed/' },
+        { name: 'Bloomberg India', url: 'https://www.bloomberg.com/feeds/podcasts/india.xml' },
+        { name: 'FT India', url: 'https://www.ft.com/world/asia-pacific/india?format=rss' },
+        { name: 'WSJ India', url: 'https://www.wsj.com/news/types/india-news?mod=rsswn' },
+        { name: 'BBC India Business', url: 'https://feeds.bbci.co.uk/news/world/asia/india/rss.xml' },
+        { name: 'Guardian India', url: 'https://www.theguardian.com/world/india/rss' },
+        { name: 'Nikkei Asia India', url: 'https://asia.nikkei.com/Location/South-Asia/India/feed' },
+        { name: 'SCMP India', url: 'https://www.scmp.com/rss/322214/feed' }
     ]
 };
 
@@ -99,14 +138,46 @@ function removeDuplicates(newsItems) {
 async function fetchNewsFromSource(source) {
     try {
         const feed = await parser.parseURL(source.url);
-        return feed.items.map(item => ({
-            title: item.title || '',
-            description: item.contentSnippet || item.content || '',
-            link: item.link || '',
-            source: source.name,
-            pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
-            id: item.guid || item.link || `${source.name}-${Date.now()}`
-        }));
+        return feed.items.map(item => {
+            // Extract image from various possible fields
+            let imageUrl = null;
+            
+            // Try different image fields
+            if (item.enclosure && item.enclosure.url) {
+                imageUrl = item.enclosure.url;
+            } else if (item['media:content'] && item['media:content']['$'] && item['media:content']['$'].url) {
+                imageUrl = item['media:content']['$'].url;
+            } else if (item['media:thumbnail'] && item['media:thumbnail']['$'] && item['media:thumbnail']['$'].url) {
+                imageUrl = item['media:thumbnail']['$'].url;
+            } else if (item.content) {
+                // Try to extract image from content HTML
+                const imgMatch = item.content.match(/<img[^>]+src="([^">]+)"/);
+                if (imgMatch) {
+                    imageUrl = imgMatch[1];
+                }
+            }
+            
+            // Get description and truncate to 100 characters
+            let description = item.contentSnippet || item.content || item.description || '';
+            
+            // Remove HTML tags if present
+            description = description.replace(/<[^>]*>/g, '');
+            
+            // Truncate to 100 characters
+            if (description.length > 100) {
+                description = description.substring(0, 100).trim() + '...';
+            }
+            
+            return {
+                title: item.title || '',
+                description: description,
+                link: item.link || '',
+                source: source.name,
+                pubDate: item.pubDate || item.isoDate || new Date().toISOString(),
+                id: item.guid || item.link || `${source.name}-${Date.now()}`,
+                image: imageUrl
+            };
+        });
     } catch (error) {
         console.error(`Error fetching from ${source.name}:`, error.message);
         return [];
@@ -146,18 +217,8 @@ app.get('/api/news/:category', async (req, res) => {
     }
     
     try {
-        let news;
-        
-        if (category === 'global-india') {
-            // Fetch global news and filter for India mentions
-            const globalNews = await aggregateNews('global');
-            news = globalNews.filter(item => 
-                item.title.toLowerCase().includes('india') ||
-                item.description.toLowerCase().includes('india')
-            );
-        } else {
-            news = await aggregateNews(category);
-        }
+        // Fetch news for the category (now global-india has its own sources)
+        const news = await aggregateNews(category);
         
         // Cache the results
         cache.set(category, news);

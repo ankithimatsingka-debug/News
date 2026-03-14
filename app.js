@@ -152,17 +152,26 @@ function displayNews(newsItems) {
     
     container.innerHTML = newsItems.map(item => `
         <article class="news-item">
-            <span class="news-source">${escapeHtml(item.source)}</span>
-            <h3 class="news-title">
-                <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">
-                    ${escapeHtml(item.title)}
-                </a>
-            </h3>
-            ${item.description ? `<p class="news-description">${escapeHtml(item.description)}</p>` : ''}
-            <div class="news-meta">
-                <span class="news-time">
-                    🕒 ${formatTime(item.pubDate)}
-                </span>
+            <div class="news-content">
+                ${item.image ? `
+                    <div class="news-image">
+                        <img src="${escapeHtml(item.image)}" alt="${escapeHtml(item.title)}" onerror="this.parentElement.style.display='none'">
+                    </div>
+                ` : ''}
+                <div class="news-text">
+                    <span class="news-source">${escapeHtml(item.source)}</span>
+                    <h3 class="news-title">
+                        <a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer">
+                            ${escapeHtml(item.title)}
+                        </a>
+                    </h3>
+                    ${item.description ? `<p class="news-description">${escapeHtml(item.description)}</p>` : ''}
+                    <div class="news-meta">
+                        <span class="news-time">
+                            🕒 ${formatTime(item.pubDate)}
+                        </span>
+                    </div>
+                </div>
             </div>
         </article>
     `).join('');
